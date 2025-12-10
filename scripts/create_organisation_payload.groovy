@@ -3,12 +3,12 @@ String threadNum = ctx.getThreadNum().toString()
 
 // JSON payload as string with interpolation
 String postPayload = """{
-  "name" : "England Ltd ${threadNum}",
+  "name" : "Test Name Ltd ${threadNum}",
   "tradingName" : "Trading Name",
   "businessCountry" : "GB-ENG",
   "companiesHouseNumber" : "12345678",
   "address" : {
-    "addressLine1" : "England Ltd",
+    "addressLine1" : "Test Name Ltd",
     "addressLine2" : "123 Street",
     "town" : "Town",
     "county" : "County",
