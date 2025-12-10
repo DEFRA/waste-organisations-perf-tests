@@ -87,6 +87,9 @@ echo "Using JM_LOG_TEST: $JM_LOG_TEST"
 echo "Using JM_JTL_FILE: $JM_JTL_FILE"
 echo "Using CI: $CI"
 echo "Using ENVIRONMENT: $ENVIRONMENT"
+echo "Using COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:0:2}"
+echo "Using COGNITO_CLIENT_SECRET: ${COGNITO_CLIENT_SECRET:0:2}"
+echo "Using COGNITO_OAUTH_BASE_URL: $COGNITO_OAUTH_BASE_URL"
 
 
 # Run all JMX files in scenarios folder (including subdirectories)
