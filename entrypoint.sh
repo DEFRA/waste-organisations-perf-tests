@@ -24,12 +24,11 @@ check_variable "$COGNITO_OAUTH_BASE_URL" "COGNITO_OAUTH_BASE_URL"
 
 # Log the run_id and environment if CI is true
 if [ "$CI" = "true" ]; then
-  echo "\n\nrun_id: $RUN_ID in $ENVIRONMENT"
+  echo "run_id: $RUN_ID in $ENVIRONMENT"
 fi
 
 # Get the current date and time
 NOW=$(date +"%Y%m%d-%H%M%S")
-
 
 # Define the directories for the test results
 REPO_LOCATION=$(cd "$(dirname "$0")" && pwd)
@@ -48,14 +47,18 @@ JM_REPORT_FOLDER=${REPO_LOCATION}/reports
 # Clean up previous test results and create fresh directories
 for fileorFolder in ${JM_REPORT_FOLDER} ${JM_LOG_FOLDER} ${JM_RESULTS_FOLDER}; do
   if [ -f "$fileorFolder" ] || [ -d "$fileorFolder" ]; then
-    rm -rf "$fileorFolder"
-    mkdir -p "$fileorFolder"
+    rm -rf "$fileorFolder"/*
+    if [ $? -ne 0 ]; then
+      echo "Error on removal, waiting and trying again"
+      sleep 2
+      rm -vrf "$fileorFolder"/*
+    fi
   fi
 done
 
 # Build list of JMX files to run
 if [ "${TEST_SCENARIO}" = "all" ]; then
-  echo "\n\nRunning all scenarios"
+  echo "Running all scenarios"
   # Build list of all JMX files in scenarios folder (including subdirectories)
   jmx_files=$(find scenarios -name "*.jmx" -type f 2>/dev/null || echo "")
   if [ -z "$jmx_files" ]; then
@@ -63,7 +66,7 @@ if [ "${TEST_SCENARIO}" = "all" ]; then
     exit 1
   fi
 else
-  echo "\n\nRunning scenario: ${TEST_SCENARIO}"
+  echo "Running scenario: ${TEST_SCENARIO}"
   SCENARIOFILE=${JM_SCENARIOS}/${TEST_SCENARIO}
   jmx_files="${SCENARIOFILE}"
 fi
@@ -87,11 +90,15 @@ echo "Using JM_LOG_TEST: $JM_LOG_TEST"
 echo "Using JM_JTL_FILE: $JM_JTL_FILE"
 echo "Using CI: $CI"
 echo "Using ENVIRONMENT: $ENVIRONMENT"
+echo "Using COGNITO_CLIENT_ID: ${COGNITO_CLIENT_ID:0:2}"
+echo "Using COGNITO_CLIENT_SECRET: ${COGNITO_CLIENT_SECRET:0:2}"
+echo "Using COGNITO_OAUTH_BASE_URL: $COGNITO_OAUTH_BASE_URL"
+
 
 # Run all JMX files in scenarios folder (including subdirectories)
 test_exit_code=0
 for jmx_file in $jmx_files; do
-  echo "\n\nRunning: $jmx_file\n\n"
+  echo "Running: $jmx_file"
   jmeter -n -t "$jmx_file" -l "${JM_JTL_FILE}" -j ${JM_LOG_TEST} \
     -Jenvironment=${ENVIRONMENT} \
     -JclientId=${COGNITO_CLIENT_ID} \
@@ -107,7 +114,7 @@ for jmx_file in $jmx_files; do
 done
 
 # Generate report from combined results
-echo "\n\nGenerating consolidated report..."
+echo "Generating consolidated report..."
 jmeter -g ${JM_JTL_FILE} -e -o ${JM_REPORT_FOLDER} -j ${JM_LOG_REPORT}
 
 if [ "$CI" = "true" ]; then
@@ -139,5 +146,7 @@ elif [ "$CI" = "false" ]; then
     echo "Report generated at: ${JM_REPORT_FOLDER}/index.html"
   fi
 fi
+
+echo "If running locally via docker, visit http://localhost:8080 to see the report"
 
 exit $test_exit_code

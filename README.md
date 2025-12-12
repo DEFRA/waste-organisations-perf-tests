@@ -19,7 +19,9 @@ The CDP Platform runs test suites in much the same way it runs any other service
 
 ### Using the Entrypoint Script
 
-The repository provides an entrypoint script for running JMeter tests. **Important**: The script sources `env.sh` automatically, so you must set all environment variables in the `env.sh` file rather than exporting them in the command line.
+The repository provides an entrypoint script for running JMeter tests on the command line.
+
+**Important**: The script sources `env.sh` automatically, so you must set all environment variables in the `env.sh` file rather than exporting them in the command line.
 
 ```bash
 # Run single test (uses TEST_SCENARIO from env.sh)
@@ -29,73 +31,31 @@ The repository provides an entrypoint script for running JMeter tests. **Importa
 ./entrypoint.sh
 ```
 
-# The following is auto generated and has not been tested
+You will need jMeter installed locally. Alternatively, run with Docker instead.
 
-## Local Testing with Docker Compose
+### Using Docker
 
-You can run the entire performance test stack locally using Docker Compose, including LocalStack, Redis, and the target service. This is useful for development, integration testing, or verifying your test scripts **before committing to `main`**, which will trigger GitHub Actions to build and publish the Docker image.
+The performance tests can be run within Docker.
 
-### Build the Docker image
+Running against a local service that is not already deployed to CDP is currently not supported but it could be with some further changes. We would need an IDP to get an access token for example.
 
-```bash
-docker compose build --no-cache development
-```
+**Important**: Configure the service environment variables as per template file [./compose/perf-tests.env.template](./compose/perf-tests.env.template) and build. The values for the env file are the same as those used in `env.sh`.
 
-This ensures any changes to `entrypoint.sh` or other scripts are picked up properly.
-
-### Start the full test stack
+Build, if needed, separately.
 
 ```bash
-docker compose up --build
+docker compose build --no-cache perf-tests
 ```
 
-This brings up:
-
-* `development`: the container that runs your performance tests
-* `localstack`: simulates AWS S3, SNS, SQS, etc.
-* `redis`: backing service for cache
-* `service`: the application under test
-
-Once all services are healthy, your performance tests will automatically start.
-
-### Notes
-
-* S3 bucket is expected to be `s3://test-results`, automatically created inside LocalStack.
-* Logs and reports are written to `./reports` on your host.
-* `entrypoint.sh` should contain the logic to wait for dependencies and kick off the test run.
-* The `depends_on` healthchecks ensure services like `localstack` and `service` are ready before tests start.
-* If you make changes to test scripts or entrypoints, rerun with:
+Run the following, which will start the tests automatically against the environment you have configured.
 
 ```bash
 docker compose up --build
 ```
 
-## Local Testing with LocalStack
+Once run, observe the results by visiting http://localhost:8080 to see the jMeter report.
 
-### Build a new Docker image
-```
-docker build . -t my-performance-tests
-```
-### Create a Localstack bucket
-```
-aws --endpoint-url=localhost:4566 s3 mb s3://my-bucket
-```
-
-### Run performance tests
-
-```
-docker run \
--e S3_ENDPOINT='http://host.docker.internal:4566' \
--e RESULTS_OUTPUT_S3_PATH='s3://my-bucket' \
--e AWS_ACCESS_KEY_ID='test' \
--e AWS_SECRET_ACCESS_KEY='test' \
--e AWS_SECRET_KEY='test' \
--e AWS_REGION='eu-west-2' \
-my-performance-tests
-```
-
-docker run -e S3_ENDPOINT='http://host.docker.internal:4566' -e RESULTS_OUTPUT_S3_PATH='s3://cdp-infra-dev-test-results/cdp-portal-perf-tests/95a01432-8f47-40d2-8233-76514da2236a' -e AWS_ACCESS_KEY_ID='test' -e AWS_SECRET_ACCESS_KEY='test' -e AWS_SECRET_KEY='test' -e AWS_REGION='eu-west-2' -e ENVIRONMENT='perf-test' my-performance-tests
-
+You can also access the results locally in the ./results folder once execution is complete.
 
 ## Licence
 
